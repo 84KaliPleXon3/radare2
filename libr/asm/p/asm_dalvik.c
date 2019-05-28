@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - earada, pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2019 - earada, pancake, h4ng3r */
 
 #include <stdio.h>
 #include <string.h>
@@ -341,8 +341,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			offset = R_ASM_GET_OFFSET (a, 's', vB);
 			if (offset == -1) {
 				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
-			}
-			else {
+			} else {
 				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 			}
 			strasm = r_str_append (strasm, str);
@@ -513,7 +512,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	if (payload < 0) {
 		op->payload = 0;
-	} else if (payload >= len) {
+	} else if (len > 0 && payload >= len) {
 		op->payload = len;
 	} else {
 		op->payload = payload;
