@@ -11,7 +11,7 @@ int dex_read_uleb128(const ut8 *ptr, int size) {
 	ut8 shift = 0;
 	ut8 byte;
 
-	while(shift < 29 && len > 0) {
+	while (shift < 29 && len > 0) {
 		byte = *(in--);
 		result |= (byte & 0x7f << shift);
 		if (byte > 0x7f) {

@@ -22,9 +22,9 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	r_list_foreach (fb->bbs, iter, bb) {
 		r_anal_diff_fingerprint_bb (c->anal, bb);
 	}
-	la = r_list_new ();
+	RList *la = r_list_new ();
 	r_list_append (la, fa);
-	lb = r_list_new ();
+	RList *lb = r_list_new ();
 	r_list_append (lb, fb);
 	r_anal_diff_fcn (c->anal, la, lb);
 	r_list_free (la);
