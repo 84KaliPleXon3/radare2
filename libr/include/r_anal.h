@@ -35,17 +35,6 @@ R_LIB_VERSION_HEADER(r_anal);
    bb_has_ops=0 -> 350MB
  */
 
-/* meta */
-typedef struct r_anal_meta_item_t {
-	ut64 from;
-	ut64 to;
-	ut64 size;
-	int type;
-	int subtype;
-	char *str;
-	const RSpace *space;
-} RAnalMetaItem;
-
 typedef struct {
 	struct r_anal_t *anal;
 	int type;
@@ -284,14 +273,7 @@ struct r_anal_type_t {
 	RList *content;
 };
 
-enum {
-	R_META_WHERE_PREV = -1,
-	R_META_WHERE_HERE = 0,
-	R_META_WHERE_NEXT = 1,
-};
-
-enum {
-	R_META_TYPE_NONE = 0,
+typedef enum {
 	R_META_TYPE_ANY = -1,
 	R_META_TYPE_DATA = 'd',
 	R_META_TYPE_CODE = 'c',
@@ -303,7 +285,15 @@ enum {
 	R_META_TYPE_RUN = 'r',
 	R_META_TYPE_HIGHLIGHT = 'H',
 	R_META_TYPE_VARTYPE = 't',
-};
+} RAnalMetaType;
+
+/* meta */
+typedef struct r_anal_meta_item_t {
+	RAnalMetaType type;
+	int subtype;
+	char *str;
+	const RSpace *space;
+} RAnalMetaItem;
 
 // anal
 typedef enum {
@@ -602,12 +592,10 @@ typedef struct r_anal_t {
 	RList *plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
-	Sdb *sdb_meta; // TODO: Future r_meta api
 	Sdb *sdb_zigns;
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
 	bool recursive_noreturn;
-	RSpaces meta_spaces;
 	RSpaces zign_spaces;
 	char *zign_path;
 	PrintfCallback cb_printf;
@@ -624,6 +612,8 @@ typedef struct r_anal_t {
 	RBTree/*<RAnalArchHintRecord>*/ arch_hints;
 	RBTree/*<RAnalArchBitsRecord>*/ bits_hints;
 	RHintCb hint_cbs;
+	RIntervalTree meta;
+	RSpaces meta_spaces;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
@@ -1727,24 +1717,20 @@ R_API void r_anal_data_free (RAnalData *d);
 #include <r_cons.h>
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
-R_API void r_meta_free(RAnal *m);
 R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where);
 R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
-R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
-R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
-R_API bool r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
+R_API bool r_meta_set_string(RAnal *m, RAnalMetaType type, ut64 addr, const char *s);
+R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr);
 R_API int r_meta_get_size(RAnal *a, int type);
-R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
+R_API void r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 to, const char *str);
-R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
-R_API RAnalMetaItem *r_meta_find_any_except(RAnal *m, ut64 at, int type, int where);
-R_API RAnalMetaItem *r_meta_find_in(RAnal *m, ut64 off, int type, int where);
-R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type);
+R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 off, int type);
+R_API void r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
-R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
 R_API int r_meta_list_at(RAnal *m, int type, int rad, ut64 addr);
 R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr);
