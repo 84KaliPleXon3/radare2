@@ -1717,7 +1717,7 @@ R_API void r_anal_data_free (RAnalData *d);
 #include <r_cons.h>
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
-R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where);
+R_API RPVector *r_meta_find_list_in(RAnal *a, ut64 at);
 R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
@@ -1734,11 +1734,11 @@ R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
 R_API int r_meta_list_at(RAnal *m, int type, int rad, ut64 addr);
 R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr);
-R_API void r_meta_list_offset(RAnal *m, ut64 addr, char input);
+R_API void r_meta_list_offset(RAnal *a, ut64 addr);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 R_API bool r_meta_deserialize_val(RAnal *a, RAnalMetaItem *it, int type, ut64 from, const char *v);
-R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_full);
+R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int rad, PJ *pj, bool show_full);
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 
 /* hints */
