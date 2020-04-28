@@ -49,11 +49,11 @@ static int __isdata(RCore *core, ut64 addr) {
 		return 1;
 	}
 
-	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
-	RListIter *iter;
-	RAnalMetaItem *meta;
+	RPVector *list = r_meta_find_list_in (core->anal, addr);
+	void **it;
 	int result = 0;
-	r_list_foreach (list, iter, meta) {
+	r_pvector_foreach (list, iter, meta) {
+		RAnalMetaItem *meta = *it;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
@@ -63,7 +63,7 @@ static int __isdata(RCore *core, ut64 addr) {
 		}
 	}
 exit:
-	r_list_free (list);
+	r_pvector_free (list);
 	return result;
 }
 

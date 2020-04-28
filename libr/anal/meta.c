@@ -59,6 +59,19 @@ static bool collect_nodes_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
+static RPVector *collect_nodes_at(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+	CollectCtx ctx = {
+		.type = type,
+		.space = space,
+		.result = r_pvector_new (NULL)
+	};
+	if (!ctx.result) {
+		return NULL;
+	}
+	r_interval_tree_all_at (&anal->meta, addr, collect_nodes_cb, &ctx);
+	return ctx.result;
+}
+
 static RPVector *collect_nodes_in(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
@@ -118,9 +131,8 @@ R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr) {
 }
 
 
-R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
+static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut64 size) {
 	RPVector *victims = NULL;
-	RSpace *space = r_spaces_current (&a->meta_spaces);
 	if (size == UT64_MAX) {
 		// delete everything
 		victims = r_pvector_new (NULL);
@@ -149,6 +161,10 @@ R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
 		r_interval_tree_delete (&a->meta, *it, true);
 	}
 	r_pvector_free (victims);
+}
+
+R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
+	del (a, type, r_spaces_current (&a->meta_spaces), addr, size);
 }
 
 R_API void r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
@@ -198,8 +214,11 @@ R_API int r_meta_add_with_subtype(RAnal *a, int type, int subtype, ut64 from, ut
 }
 
 // TODO should be named get imho
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type) {
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *end) {
 	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), at);
+	if (node && end) {
+		*end = node->end;
+	}
 	return node ? node->data : NULL;
 }
 
@@ -470,34 +489,16 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 }
 
 R_API void r_meta_list_offset(RAnal *a, ut64 addr) {
-	const int types[] = {
-		R_META_TYPE_VARTYPE,
-		R_META_TYPE_HIGHLIGHT,
-		R_META_TYPE_RUN,
-		R_META_TYPE_COMMENT,
-		R_META_TYPE_HIDE,
-		R_META_TYPE_MAGIC,
-		R_META_TYPE_FORMAT,
-		R_META_TYPE_STRING,
-		R_META_TYPE_CODE,
-		R_META_TYPE_DATA,
-	};
-
-	char key[100];
-	int i;
-
-	for (i = 0; i < sizeof (types) / sizeof (types[0]); i ++) {
-
-		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, types[i], addr);
-		const char *k = sdb_const_get (DB, key, 0);
-		if (!k) {
-			continue;
-		}
-
-		RAnalMetaUserItem ui = { a };
-
-		meta_print_item ((void *)&ui, key, k);
+	RPVector *nodes = collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), addr);
+	if (!nodes) {
+		return;
 	}
+	void **it;
+	r_pvector_foreach (nodes, it) {
+		RIntervalNode *node = *it;
+		r_meta_print (a, node->data, node->start, node->end, 0, NULL, true);
+	}
+	r_pvector_free (nodes);
 }
 
 
@@ -520,19 +521,19 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 		}
 	}
 
-	SdbList *ls = sdb_foreach_list (DB, true);
-	SdbListIter *lsi;
-	SdbKv *kv;
-	ls_foreach (ls, lsi, kv) {
-		if (type == R_META_TYPE_ANY || (strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
-			if (cb) {
-				cb ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
-			} else {
-				meta_print_item ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
-			}
+	RBIter it;
+	RAnalMetaItem *item;
+	r_interval_tree_foreach (&a->meta, it, item) {
+		RIntervalNode *node = r_rbtree_iter_get (&it, RIntervalNode, node);
+		if (type != R_META_TYPE_ANY && item->type != type) {
+			continue;
+		}
+		if (cb) {
+			// TODO
+		} else {
+			r_meta_print (a, item, node->start, node->end, rad, pj, true);
 		}
 	}
-	ls_free (ls);
 
 beach:
 	if (pj) {
@@ -551,52 +552,31 @@ R_API int r_meta_list_at(RAnal *a, int type, int rad, ut64 addr) {
 	return r_meta_list_cb (a, type, rad, NULL, NULL, addr);
 }
 
-static int meta_enumerate_cb(void *user, const char *k, const char *v) {
-	RAnalMetaUserItem *ui = user;
-	RList *list = ui->user;
-	RAnalMetaItem *it = R_NEW0 (RAnalMetaItem);
-	if (!it) {
-		return 0;
+R_API void r_meta_rebase(RAnal *anal, ut64 diff) {
+	if (!diff) {
+		return;
 	}
-	if (!meta_deserialize (ui->anal, it, k, v)) {
-		free (it);
-		goto beach;
+	RIntervalTree old = anal->meta;
+	r_interval_tree_init (&anal->meta, old.free);
+	RBIter it;
+	RAnalMetaItem *item;
+	r_interval_tree_foreach (&old, it, item) {
+		RIntervalNode *node = r_rbtree_iter_get (&it, RIntervalNode, node);
+		ut64 newstart = node->start + diff;
+		ut64 newend = node->end + diff;
+		if (newend < newstart) {
+			// Can't rebase this
+			newstart = node->start;
+			newend = node->end;
+		}
+		r_interval_tree_insert (&anal->meta, newstart, newend, item);
 	}
-	if (!it->str) {
-		free (it);
-		goto beach;
-	}
-	r_list_append (list, it);
-beach:
-	return 1;
-}
-
-R_API RList *r_meta_enumerate(RAnal *a, int type) {
-	RList *list = r_list_newf (r_meta_item_free);
-	r_meta_list_cb (a, type, 0, meta_enumerate_cb, list, UT64_MAX);
-	return list;
-}
-
-static int meta_unset_cb(void *user, const char *k, const char *v) {
-	char nk[128], nv[4096];
-	RAnalMetaUserItem *ui = user;
-	RAnal *a = ui->anal;
-	RAnalMetaItem it = {0};
-	if (!strstr (k, ".0x")) {
-		return 1;
-	}
-	meta_deserialize (ui->anal, &it, k, v);
-	if (it.space && it.space == ui->user) {
-		it.space = NULL;
-		meta_serialize (&it, nk, sizeof (nk), nv, sizeof (nv));
-		sdb_set (DB, nk, nv, 0);
-	}
-	return 1;
+	old.free = NULL;
+	r_interval_tree_fini (&old);
 }
 
 R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space) {
-	RAnalMetaUserItem ui = { .anal = a, .user = (void *)space };
-	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_unset_cb, &ui, UT64_MAX);
+	del (a, R_META_TYPE_ANY, space, 0, UT64_MAX);
 }
 
 typedef struct {
@@ -620,44 +600,22 @@ static int meta_count_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-static int get_meta_size(void *user, const char *k, const char *v) {
-	RAnalMetaUserItem *ui = user;
-	RAnalMetaItem it;
-	if (!meta_deserialize (ui->anal, &it, k, v)) {
-		return -1;
-	}
-	if (ui->fcn && !r_anal_function_contains (ui->fcn, it.from)) {
-		goto beach;
-	}
-	if (!it.str) {
-		it.str = strdup (""); // don't break in free
-		if (!it.str) {
-			goto beach;
+R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
+	ut64 sum = 0;
+	RBIter it;
+	RAnalMetaItem *item;
+	RIntervalNode *prev = NULL;
+	r_interval_tree_foreach (&a->meta, it, item) {
+		RIntervalNode *node = r_rbtree_iter_get (&it, RIntervalNode, node);
+		if (type != R_META_TYPE_ANY && item->type != type) {
+			continue;
 		}
+		ut64 start = R_MAX (prev->end, node->start);
+		sum += node->end - start + 1;
+		prev = node;
 	}
-	return it.size;
-beach:
-	free (it.str);
-	return -1;
+	return sum;
 }
-
-R_API int r_meta_get_size(RAnal *a, int type) {
-	RAnalMetaUserItem ui = { a, type, 0, NULL, NULL, 0, NULL };
-	SdbList *ls = sdb_foreach_list (DB, true);
-	SdbListIter *lsi;
-	SdbKv *kv;
-	int tot_size = 0;
-	int meta_size;
-	ls_foreach (ls, lsi, kv) {
-		if ((strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
-			meta_size = get_meta_size ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
-			tot_size += meta_size > -1 ? meta_size : 0;
-		}
-	}
-	ls_free (ls);
-	return tot_size;
-}
-
 
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 	myMetaUser mu = { .ctx = space };

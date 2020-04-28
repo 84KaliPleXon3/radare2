@@ -122,10 +122,12 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		}
 		addr += sz;
 		{
-			RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_COMMENT);
+			ut64 metaend;
+			RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_COMMENT, &metaend);
 			if (mi) {
-				ptr += mi->size;
-				addr += mi->size;
+				ut64 size = metaend - addr + 1;
+				ptr += size;
+				addr += size;
 				r_meta_item_free (mi);
 				goto __next;
 			}
