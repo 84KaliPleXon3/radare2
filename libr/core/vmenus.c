@@ -842,25 +842,6 @@ R_API int r_core_visual_types(RCore *core) {
 	return true;
 }
 
-static int cmtcb(void *usr, const char *k, const char *v) {
-	if (!strncmp (k, "meta.C.", 7)) {
-		RList *list = (RList*)usr;
-		char *msg, *comma = strchr (v, ',');
-		if (comma) {
-			comma = strchr (comma + 1, ',');
-			if (comma) {
-				msg = (char *)sdb_decode (comma + 1, NULL);
-				if (msg) {
-					msg = r_str_replace (msg, "\n", "", true);
-					r_list_append (list, r_str_newf ("%s  %s", k+7, msg));
-					free (msg);
-				}
-			}
-		}
-	}
-	return 1;
-}
-
 R_API bool r_core_visual_hudclasses(RCore *core) {
 	RListIter *iter, *iter2;
 	RBinClass *c;
@@ -917,7 +898,17 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	}
 	list->free = free;
 	r_flag_foreach (core->flags, hudstuff_append, list);
-	sdb_foreach (core->anal->sdb_meta, cmtcb, list);
+	// TODO: test this code
+	RBIter it;
+	RAnalMetaItem *mi;
+	r_interval_tree_foreach (&core->anal->meta, it, mi) {
+		if (mi->type == R_META_TYPE_COMMENT) {
+			char *s = r_str_newf ("0x%"PFMT64x" %s", r_rbtree_iter_get (&it, RIntervalNode, node)->start, mi->str);
+			if (s) {
+				r_list_push (list, s);
+			}
+		}
+	}
 	res = r_cons_hud (list, NULL);
 	if (res) {
 		char *p = strchr (res, ' ');
@@ -1672,10 +1663,9 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			int extra = strlen (chainstr) / scr_w;
 			r_cons_gotoxy (0, extra + 22 + count);
 			r_cons_strcat (msg);
-			char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
+			const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
 			if (cmt) {
 				r_cons_strcat (cmt);
-				free (cmt);
 			}
 			count ++;
 		}
@@ -2171,26 +2161,6 @@ static bool meta_deserialize(RAnal *a, RAnalMetaItem *it, const char *k, const c
 	return r_meta_deserialize_val (a, it, k[5], sdb_atoi (k + 7), v);
 }
 
-static int meta_enumerate_cb(void *user, const char *k, const char *v) {
-	RAnalMetaUserItem *ui = user;
-	RList *list = ui->user;
-	RAnalMetaItem *it = R_NEW0 (RAnalMetaItem);
-	if (!it) {
-		return 0;
-	}
-	if (!meta_deserialize (ui->anal, it, k, v)) {
-		free (it);
-		goto beach;
-	}
-	if (!it->str) {
-		free (it);
-		goto beach;
-	}
-	r_list_append (list, it);
-beach:
-	return 1;
-}
-
 R_API int r_core_visual_comments (RCore *core) {
 	char *str;
 	char cmd[512], *p = NULL;
@@ -2201,14 +2171,15 @@ R_API int r_core_visual_comments (RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
-		RList *items = r_list_newf (free);
+		RBIter it;
 		RAnalMetaItem *item;
-		RListIter *iter;
-		r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, meta_enumerate_cb, items, UT64_MAX);
 		i = 0;
-		r_list_foreach (items, iter, item) {
+		r_interval_tree_foreach (&core->anal->meta, it, item) {
+			if (item->type != R_META_TYPE_COMMENT) {
+				continue;
+			}
 			str = item->str;
-			addr = item->from;
+			addr = r_rbtree_iter_get (&it, RIntervalNode, node)->start;
 			if (option==i) {
 				from = addr;
 				size = 1; // XXX: remove this thing size for comments is useless d->size;

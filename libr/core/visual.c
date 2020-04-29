@@ -2935,16 +2935,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					int times = R_MAX (1, wheelspeed);
 					// Check if we have a data annotation.
+					ut64 amiend;
 					RAnalMetaItem *ami = r_meta_find (core->anal,
 							core->offset, R_META_TYPE_DATA,
-							R_META_WHERE_HERE);
+							&amiend);
 					if (!ami) {
 						ami = r_meta_find (core->anal,
 								core->offset, R_META_TYPE_STRING,
-								R_META_WHERE_HERE);
+								&amiend);
 					}
 					if (ami) {
-						r_core_seek_delta (core, ami->size);
+						r_core_seek_delta (core, r_meta_item_size (core->offset, amiend));
 						r_meta_item_free (ami);
 					} else {
 						int distance = numbuf_pull ();

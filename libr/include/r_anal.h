@@ -1717,7 +1717,15 @@ R_API void r_anal_data_free (RAnalData *d);
 #include <r_cons.h>
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
-R_API RPVector *r_meta_find_list_in(RAnal *a, ut64 at);
+static inline ut64 r_meta_item_size(ut64 start, ut64 end) {
+	// meta items use inclusive/inclusive intervals
+	return end - start + 1;
+}
+
+static inline ut64 r_meta_node_size(RIntervalNode *node) {
+	return r_meta_item_size (node->start, node->end);
+}
+
 R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API bool r_meta_set_string(RAnal *m, RAnalMetaType type, ut64 addr, const char *s);
@@ -1728,6 +1736,9 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 to, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *end);
 R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 off, int type);
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 end, RAnalMetaType type);
 R_API void r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
@@ -1736,7 +1747,6 @@ R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, voi
 R_API void r_meta_list_offset(RAnal *a, ut64 addr);
 R_API void r_meta_rebase(RAnal *anal, ut64 diff);
 R_API void r_meta_item_free(void *_item);
-R_API bool r_meta_deserialize_val(RAnal *a, RAnalMetaItem *it, int type, ut64 from, const char *v);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int rad, PJ *pj, bool show_full);
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 

@@ -52,13 +52,14 @@ static int __isdata(RCore *core, ut64 addr) {
 	RPVector *list = r_meta_find_list_in (core->anal, addr);
 	void **it;
 	int result = 0;
-	r_pvector_foreach (list, iter, meta) {
-		RAnalMetaItem *meta = *it;
+	r_pvector_foreach (list, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *meta = node->data;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
-			result = meta->size - (addr - meta->from);
+			result = node->end - addr + 1;
 			goto exit;
 		}
 	}

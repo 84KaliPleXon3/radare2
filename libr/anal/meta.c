@@ -214,10 +214,10 @@ R_API int r_meta_add_with_subtype(RAnal *a, int type, int subtype, ut64 from, ut
 }
 
 // TODO should be named get imho
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *end) {
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *size) {
 	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), at);
-	if (node && end) {
-		*end = node->end;
+	if (node && size) {
+		*size = r_meta_item_size (node->start, node->end);
 	}
 	return node ? node->data : NULL;
 }
@@ -227,8 +227,16 @@ R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type) {
 	return node ? node->data : NULL;
 }
 
-R_API RPVector *r_meta_find_list_in(RAnal *a, ut64 at) {
-	return collect_nodes_in (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), at);
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at) {
+	return collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), at);
+}
+
+R_API RPVector *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type) {
+	return collect_nodes_in (a, type, r_spaces_current (&a->meta_spaces), at);
+}
+
+R_API RPVector *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 end, RAnalMetaType type) {
+	return collect_nodes_intersect (a, type, r_spaces_current (&a->meta_spaces), start, end);
 }
 
 R_API const char *r_meta_type_to_string(int type) {

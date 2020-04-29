@@ -651,8 +651,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '-': // "Cf-", "Cd-", ...
 		switch (input[2]) {
 		case '*': // "Cf-*", "Cd-*", ...
-			core->num->value = r_meta_del (core->anal,
-					input[0], 0, UT64_MAX);
+			r_meta_del (core->anal, input[0], 0, UT64_MAX);
 			break;
 		case ' ':
 			p2 = strchr (input + 3, ' ');
@@ -665,7 +664,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					break;
 				}
 				for (i = 0; i < rep && UT64_MAX - cur_addr > size; i++, cur_addr += size) {
-					core->num->value = r_meta_del (core->anal, input[0], cur_addr, size);
+					r_meta_del (core->anal, input[0], cur_addr, size);
 				}
 				break;
 			} else {
@@ -673,8 +672,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				/* fallthrough */
 			}
 		default:
-			core->num->value = r_meta_del (core->anal,
-					input[0], addr, 1);
+			r_meta_del (core->anal, input[0], addr, 1);
 			break;
 		}
 		break;
@@ -701,47 +699,36 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		break;
 	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
-			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
+			ut64 end;
+			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[3], NULL, false);
+				r_meta_print (core->anal, mi, addr, end, input[3], NULL, false);
 				r_meta_item_free (mi);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
-			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
+			ut64 end;
+			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[2], NULL, false);
+				r_meta_print (core->anal, mi, addr, end, input[2], NULL, false);
 				r_cons_newline ();
 				r_meta_item_free (mi);
 			}
 			break;
 		}
-		char key[100];
-		const char *val;
-		RAnalMetaItem mi;
-		Sdb *s = core->anal->sdb_meta;
-		bool esc_bslash = core->print->esc_bslash;
-		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, type, addr);
-		val = sdb_const_get (s, key, 0);
-		if (!val) {
-			break;
-		}
-		if (!r_meta_deserialize_val (core->anal, &mi, type, addr, val)) {
-			break;
-		}
-		if (!mi.str) {
-			break;
-		}
+		ut64 end;
+		RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
 		if (type == 's') {
 			char *esc_str;
-			switch (mi.subtype) {
+			bool esc_bslash = core->print->esc_bslash;
+			switch (mi->subtype) {
 			case R_STRING_ENC_UTF8:
-				esc_str = r_str_escape_utf8 (mi.str, false, esc_bslash);
+				esc_str = r_str_escape_utf8 (mi->str, false, esc_bslash);
 				break;
 			case 0:  /* temporary legacy workaround */
 				esc_bslash = false;
 			default:
-				esc_str = r_str_escape_latin1 (mi.str, false, esc_bslash, false);
+				esc_str = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
 			}
 			if (esc_str) {
 				r_cons_printf ("\"%s\"\n", esc_str);
@@ -750,11 +737,11 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_cons_println ("<oom>");
 			}
 		} else if (type == 'd') {
-			r_cons_printf ("%"PFMT64u"\n", mi.size);
+			r_cons_printf ("%"PFMT64u"\n", r_meta_item_size (addr, end));
 		} else {
-			r_cons_println (mi.str);
+			r_cons_println (mi->str);
 		}
-		free (mi.str);
+		free (mi->str);
 		break;
 	case ' ': // "Cf", "Cd", ...
 	case '\0':
