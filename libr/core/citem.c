@@ -30,6 +30,8 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 					ci->type = "string";
 					ci->size = size;
 					break;
+				default:
+					break;
 				}
 				if (item->str) {
 					if (!ci->data) {

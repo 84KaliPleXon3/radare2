@@ -895,9 +895,8 @@ static void ds_free(RDisasmState *ds) {
 /* XXX move to r_print */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color) {
 	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
-	char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
+	const char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
-	free (hlstr);
 	RAnalFunction *f = ds->show_color_args ? fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL) : NULL;
 
 	if (!ds->show_color || !ds->colorop) {
@@ -1118,7 +1117,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		int i = 0;
 		char *word = NULL;
 		char *bgcolor = NULL;
-		char *wcdata = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
+		const char *wcdata = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 		int argc = 0;
 		char **wc_array = r_str_argv (wcdata, &argc);
 		for (i = 0; i < argc; i++) {
@@ -1239,7 +1238,7 @@ static void ds_show_refs(RDisasmState *ds) {
 	RList *list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
 
 	r_list_foreach (list, iter, ref) {
-		char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
+		const char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		const RList *fls = r_flag_get_list (ds->core->flags, ref->addr);
 		RListIter *iter2;
 		RFlagItem *fis;
@@ -1255,7 +1254,6 @@ static void ds_show_refs(RDisasmState *ds) {
 		if (cmt) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; (%s)", cmt);
-			free (cmt);
 		}
 		if (ref->type & R_ANAL_REF_TYPE_CALL) {
 			RAnalOp aop;
@@ -2421,6 +2419,8 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				meta = mi;
 				meta_size = r_meta_item_size (node->start, node->end);
 				break;
+			default:
+				break;
 			}
 		}
 		r_pvector_free (metas);
@@ -2467,6 +2467,8 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				break;
 			case R_META_TYPE_RUN:
 				r_core_cmd0 (core, meta->str);
+				break;
+			default:
 				break;
 			}
 			int sz = R_MIN (16, meta_size);
@@ -2962,6 +2964,8 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 		case R_META_TYPE_STRING:
 			fmi = mi;
 			break;
+		default:
+			break;
 		}
 	}
 	r_pvector_foreach (metas, it) {
@@ -3065,6 +3069,8 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				R_FREE (ds->prev_line_col);
 				ret = true;
 			}
+			break;
+		default:
 			break;
 		}
 	}
@@ -3824,16 +3830,14 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 		return false;
 	}
 	ut64 refaddr = ds->analop.ptr;
-	char *anal_flag = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
+	const char *anal_flag = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
 	if (anal_flag) {
-		anal_flag = strdup (anal_flag);
-		if (anal_flag) {
-			r_name_filter (anal_flag, -1);
-			if (!strcmp (&name[4], anal_flag)) {
-				free (anal_flag);
+		char *dupped = strdup (anal_flag);
+		if (dupped) {
+			r_name_filter (dupped, -1);
+			if (!strcmp (&name[4], dupped)) {
 				return true;
 			}
-			free (anal_flag);
 		}
 	}
 	return false;
@@ -5262,11 +5266,10 @@ toro:
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment (core, f, cmt, sizeof (cmt));
-				char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
+				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 				if (comment) {
 					ds_pre_xrefs (ds, true);
 					r_cons_printf ("; %s\n", comment);
-					free (comment);
 				}
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[CORNER_TL],
@@ -6101,12 +6104,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		/* add comments */
 		{
-			// TODO: slow because we are decoding and encoding b64
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
+			// TODO: slow because we are encoding b64
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
 			if (comment) {
 				char *b64comment = sdb_encode ((const ut8*)comment, -1);
 				pj_ks (pj, "comment", b64comment);
-				free (comment);
 				free (b64comment);
 			}
 		}
@@ -6443,6 +6445,8 @@ toro:
 			case R_META_TYPE_RUN:
 				/* TODO */
 				break;
+			default:
+				break;
 			}
 		}
 		r_asm_set_pc (core->assembler, core->offset + i);
@@ -6469,10 +6473,9 @@ toro:
 			}
 		}
 		if (fmt == 'C') {
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, core->offset + i);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, core->offset + i);
 			if (comment) {
 				r_cons_printf ("0x%08"PFMT64x " %s\n", core->offset + i, comment);
-				free (comment);
 			}
 			i += ret;
 			continue;

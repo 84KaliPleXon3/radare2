@@ -7265,14 +7265,25 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						ref->addr, ref->type, addr, iter->n? ",": "");
 			} else { // axt
 				RAnalFunction *fcn;
-				char *comment;
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
-					comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+					char *print_comment = NULL;
+					if (strchr (comment, '\n')) { // display only until the first newline
+						print_comment = strdup (comment);
+						if (print_comment) {
+							comment = print_comment;
+							char *nl = strchr (print_comment, '\n');
+							if (nl) {
+								*nl = '\0';
+							}
+						}
+					}
 					char *buf_fcn = comment
-						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+					free (print_comment);
 					r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_xrefs_type_tostring (ref->type), buf_asm);
 					free (buf_asm);

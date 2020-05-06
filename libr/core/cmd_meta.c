@@ -363,7 +363,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				free (comment);
 			}
 		} else {
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			if (comment && *comment) {
 				char *cmtfile = r_str_between (comment, ",(", ")");
 				if (cmtfile && *cmtfile) {
@@ -373,17 +373,14 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				}
 				free (cmtfile);
 			}
-			free (comment);
 		}
 		break;
 	case '.':
 		  {
 			  ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
-			  char *comment = r_meta_get_string (
-					  core->anal, R_META_TYPE_COMMENT, at);
+			  const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
 			  if (comment) {
 				  r_cons_println (comment);
-				  free (comment);
 			  }
 		  }
 		break;
@@ -428,8 +425,8 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case '!':
 		{
-			char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			char *out;
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			out = r_core_editor (core, NULL, comment);
 			if (out) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -439,7 +436,6 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
-			free (comment);
 		}
 		break;
 	case '+':

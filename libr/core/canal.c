@@ -4292,6 +4292,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 			case R_META_TYPE_COMMENT:
 				as->block[piece].comments++;
 				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -4952,6 +4954,8 @@ repeat:
 					i += 4;
 					r_pvector_free (list);
 					goto repeat;
+				default:
+					break;
 				}
 			}
 			r_pvector_free (list);

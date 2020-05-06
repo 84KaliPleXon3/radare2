@@ -61,6 +61,8 @@ static int __isdata(RCore *core, ut64 addr) {
 		case R_META_TYPE_FORMAT:
 			result = node->end - addr + 1;
 			goto exit;
+		default:
+			break;
 		}
 	}
 exit:

@@ -1661,7 +1661,8 @@ static void visual_comma(RCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
-	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	const char *prev_cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	comment = prev_cmt ? strdup (prev_cmt) : NULL;
 	cmtfile = r_str_between (comment, ",(", ")");
 	cwd = getcommapath (core);
 	if (!cmtfile) {

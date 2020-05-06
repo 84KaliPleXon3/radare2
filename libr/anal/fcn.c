@@ -1259,6 +1259,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		case R_META_TYPE_FORMAT:
 			r_pvector_free (metas);
 			return 0;
+		default:
+			break;
 		}
 	}
 	r_pvector_free (metas);
