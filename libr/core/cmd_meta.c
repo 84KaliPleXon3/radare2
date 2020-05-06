@@ -350,7 +350,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			eprintf ("Usage: CC, [file]\n");
 		} else if (input[2] == ' ') {
 			const char *fn = input+2;
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			while (*fn== ' ')fn++;
 			if (comment && *comment) {
 				// append filename in current comment
@@ -358,9 +358,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 				free (nc);
 			} else {
-				char *comment = r_str_newf (",(%s)", fn);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
-				free (comment);
+				char *newcomment = r_str_newf (",(%s)", fn);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, newcomment);
+				free (newcomment);
 			}
 		} else {
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -493,13 +493,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			newcomment = strdup (arg);
 		}
 		if (newcomment) {
-			char *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			if (!comment || (comment && !strstr (comment, newcomment))) {
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-						addr, newcomment);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, newcomment);
 			}
-			free (comment);
 			free (newcomment);
 		}
 		}
@@ -533,24 +530,16 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		// Comment at
 		if (p) {
 			if (input[2]=='+') {
-				char *comment = r_meta_get_string (
-						core->anal, R_META_TYPE_COMMENT,
-						addr);
+				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 				if (comment) {
-					char* text = r_str_newf ("%s\n%s", comment, p);
-					r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
-							addr, addr+1, text);
+					char *text = r_str_newf ("%s\n%s", comment, p);
+					r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, addr+1, text);
 					free (text);
 				} else {
-					r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
-							addr, addr+1, p);
+					r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, addr+1, p);
 				}
 			} else {
-				r_meta_add (core->anal,
-						R_META_TYPE_COMMENT,
-						addr, addr + 1, p);
+				r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, addr + 1, p);
 			}
 		} else {
 			eprintf ("Usage: CCa [address] [comment]\n");
@@ -574,17 +563,13 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
 		const char* newcomment = r_str_trim_head_ro (input + 2);
-		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
-			text = malloc (strlen (comment)+ strlen (newcomment)+2);
+			char *text = r_str_newf ("%s %s", comment, nc);
 			if (text) {
-				strcpy (text, comment);
-				strcat (text, " ");
-				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
-				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
@@ -598,11 +583,9 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	case '.': // "Ct. @ addr"
 		{
 		ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_VARTYPE, at);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, at);
 		if (comment) {
 			r_cons_println (comment);
-			free (comment);
 		}
 		}
 		break;
@@ -680,8 +663,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		break;
 	case '!': // "Cf!", "Cd!", ...
 		{
-			char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			char *out;
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			out = r_core_editor (core, NULL, comment);
 			if (out) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -690,7 +673,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
-			free (comment);
 		}
 		break;
 	case '.': // "Cf.", "Cd.", ...

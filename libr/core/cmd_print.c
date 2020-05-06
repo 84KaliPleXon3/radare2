@@ -1628,7 +1628,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	char *bytes, *chars;
 	char *ebytes, *echars; // They'll walk over the vars above
 	ut64 fend = UT64_MAX;
-	char *comment;
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch = 0;
@@ -1751,10 +1750,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				meta = NULL;
 			}
 			// collect comments
-			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
-				comment = r_str_prepend (comment, ";");
-				note[j] = comment;
+				note[j] = r_str_newf (";", comment);
 				marks = true;
 			}
 
@@ -1766,6 +1764,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				} else {
 					fend = addr + j + flag->size;
 				}
+				free (note[j]);
 				note[j] = r_str_prepend (strdup (flag->name), "/");
 				marks = true;
 				color_idx++;
@@ -4651,7 +4650,7 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 			ea += minopsz;
 			continue;
 		}
-		char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ea);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ea);
 		// TODO parse/filter op->mnemonic for better disasm
 		ut8 *bytes = malloc (op->size);
 		if (!bytes) {
@@ -4665,7 +4664,6 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 		char *refs = __op_refs (core, op, 0);
 		char *xrefs = __op_refs (core, op, 1);
 		r_table_add_rowf (t, "sXssssss", fn, ea, sbytes, op->mnemonic, comment? comment: "", esil, refs, xrefs);
-		free (comment);
 		free (sbytes);
 		free (bytes);
 		free (xrefs);
