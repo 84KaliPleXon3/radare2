@@ -1737,12 +1737,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			R_FREE (note[j]);
 
 			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
-			RAnalMetaItem *meta = r_meta_find_in (core->anal, ea + j,
-					R_META_TYPE_FORMAT, R_META_WHERE_HERE);
-			if (meta && meta->type == R_META_TYPE_FORMAT && meta->from == addr + j) {
+			RIntervalNode *meta_node = r_meta_get_in (core->anal, ea + j, R_META_TYPE_FORMAT);
+			RAnalMetaItem *meta = meta_node ? meta_node->data : NULL;
+			if (meta && meta->type == R_META_TYPE_FORMAT && meta_node->start == addr + j) {
 				r_cons_printf (".format %s ; size=", meta->str);
 				r_core_cmdf (core, "pfs %s", meta->str);
-				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta->from);
+				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta_node->start);
 				append (ebytes, Color_INVERT);
 				append (echars, Color_INVERT);
 				hadflag = true;

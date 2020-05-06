@@ -222,9 +222,8 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE u
 	return node ? node->data : NULL;
 }
 
-R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type) {
-	RIntervalNode *node = find_node_in (a, type, r_spaces_current (&a->meta_spaces), at);
-	return node ? node->data : NULL;
+R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 at, RAnalMetaType type) {
+	return find_node_in (a, type, r_spaces_current (&a->meta_spaces), at);
 }
 
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at) {
@@ -496,7 +495,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 	}
 }
 
-R_API void r_meta_list_offset(RAnal *a, ut64 addr) {
+R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad) {
 	RPVector *nodes = collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), addr);
 	if (!nodes) {
 		return;
@@ -504,7 +503,7 @@ R_API void r_meta_list_offset(RAnal *a, ut64 addr) {
 	void **it;
 	r_pvector_foreach (nodes, it) {
 		RIntervalNode *node = *it;
-		r_meta_print (a, node->data, node->start, node->end, 0, NULL, true);
+		r_meta_print (a, node->data, node->start, node->end, rad, NULL, true);
 	}
 	r_pvector_free (nodes);
 }
@@ -587,27 +586,6 @@ R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space) {
 	del (a, R_META_TYPE_ANY, space, 0, UT64_MAX);
 }
 
-typedef struct {
-	int count;
-	int index;
-	const RSpace *ctx;
-} myMetaUser;
-
-static int meta_count_cb(void *user, const char *k, const char *v) {
-	RAnalMetaUserItem *ui = user;
-	myMetaUser *mu = ui->user;
-	RAnalMetaItem it = {0};
-	if (!strstr (k, ".0x")) {
-		return 1;
-	}
-	meta_deserialize (ui->anal, &it, k, v);
-	if (mu && it.space == mu->ctx) {
-		mu->count++;
-	}
-	r_meta_item_fini (&it);
-	return 1;
-}
-
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
 	ut64 sum = 0;
 	RBIter it;
@@ -626,9 +604,15 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
 }
 
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
-	myMetaUser mu = { .ctx = space };
-	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_count_cb, &mu, UT64_MAX);
-	return mu.count;
+	int r = 0;
+	RBIter it;
+	RAnalMetaItem *item;
+	r_interval_tree_foreach (&a->meta, it, item) {
+		if (item->space == space) {
+			r++;
+		}
+	}
+	return r;
 }
 
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz) {

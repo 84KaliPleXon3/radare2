@@ -4941,10 +4941,11 @@ repeat:
 			break;
 		}
 		{
-			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
-			RListIter *iter;
-			RAnalMetaItem *meta;
-			r_list_foreach (list, iter, meta) {
+			RPVector *list = r_meta_get_all_in (core->anal, cur, R_META_TYPE_ANY);
+			void **it;
+			r_pvector_foreach (list, it) {
+				RIntervalNode *node = *it;
+				RAnalMetaItem *meta = node->data;
 				switch (meta->type) {
 				case R_META_TYPE_DATA:
 				case R_META_TYPE_STRING:
@@ -4954,9 +4955,7 @@ repeat:
 					goto repeat;
 				}
 			}
-			if (list) {
-				r_list_free (list);
-			}
+			r_pvector_free (list);
 		}
 
 		/* realign address if needed */

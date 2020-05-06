@@ -2151,15 +2151,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	}
 	return true;
 }
-static bool meta_deserialize(RAnal *a, RAnalMetaItem *it, const char *k, const char *v) {
-	if (strlen (k) < 8) {
-		return false;
-	}
-	if (memcmp (k + 6, ".0x", 3)) {
-		return false;
-	}
-	return r_meta_deserialize_val (a, it, k[5], sdb_atoi (k + 7), v);
-}
 
 R_API int r_core_visual_comments (RCore *core) {
 	char *str;
