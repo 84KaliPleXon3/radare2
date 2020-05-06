@@ -445,18 +445,18 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = r_str_trim_head_ro (input + 2);
-		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		const char *newcomment = r_str_trim_head_ro (input + 2);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		char *text;
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
-			text = malloc (strlen (comment)+ strlen (newcomment)+2);
+			text = malloc (strlen (comment) + strlen (newcomment) + 2);
 			if (text) {
 				strcpy (text, comment);
 				strcat (text, " ");
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
-				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
@@ -703,7 +703,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
 			if (mi) {
 				r_meta_print (core->anal, mi, addr, end, input[3], NULL, false);
-				r_meta_item_free (mi);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
@@ -712,7 +711,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (mi) {
 				r_meta_print (core->anal, mi, addr, end, input[2], NULL, false);
 				r_cons_newline ();
-				r_meta_item_free (mi);
 			}
 			break;
 		}

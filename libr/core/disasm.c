@@ -2090,23 +2090,19 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		return;
 	}
 	RFlagItem *item = r_flag_get_i (core->flags, ds->at);
-	char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
-	char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
+	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
+	const char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
 			ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_func_var_type), vartype);
-			free (vartype);
 		} else if (item && item->comment && *item->comment) {
 			ds->ocomment = item->comment;
 			ds->comment = strdup (item->comment);
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s; %s %s%s; %s", COLOR_ARG (ds, color_func_var_type), vartype, Color_RESET, COLOR (ds, color_usrcmt), comment);
-		free (vartype);
-		free (comment);
 	} else {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
-		free (comment);
 	}
 	if (!ds->comment || !*ds->comment) {
 		return;
@@ -2491,9 +2487,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			}
 			ds->oplen = sz; //ds->asmop.size;
 			return i;
-		}
-		if (meta) {
-			r_meta_item_free (meta);
 		}
 	}
 
@@ -4869,7 +4862,6 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
 	if (mi) {
 		is_code = mi->type != 'd';
-		r_meta_item_free (mi);
 		mi = NULL;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
@@ -6398,7 +6390,6 @@ toro:
 			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
 			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
-		r_meta_item_free (meta);
 		ut64 meta_start = core->offset + i;
 		ut64 meta_end;
 		meta = r_meta_find (core->anal, meta_start, R_META_TYPE_ANY, &meta_end);
@@ -6573,7 +6564,6 @@ toro:
 		goto toro;
 	}
 	r_config_set_i (core->config, "asm.marks", asmmarks);
-	r_meta_item_free (meta);
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, true);
 	return err;

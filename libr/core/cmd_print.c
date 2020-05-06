@@ -1748,7 +1748,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				hadflag = true;
 			}
 			if (meta) {
-				r_meta_item_free (meta);
 				meta = NULL;
 			}
 			// collect comments

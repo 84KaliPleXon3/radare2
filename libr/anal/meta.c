@@ -108,8 +108,8 @@ R_API bool r_meta_set_string(RAnal *a, RAnalMetaType type, ut64 addr, const char
 	item->type = type;
 	item->space = space;
 	free (item->str);
-	item->str = strdup (s);
-	if (!item->str) {
+	item->str = s ? strdup (s) : NULL;
+	if (s && !item->str) {
 		if (!node) { // If we just created this
 			free (item);
 		}
@@ -175,7 +175,7 @@ static void r_meta_item_fini(RAnalMetaItem *item) {
 	free (item->str);
 }
 
-R_API void r_meta_item_free(void *_item) {
+R_IPI void r_meta_item_free(void *_item) {
 	if (_item) {
 		RAnalMetaItem *item = _item;
 		r_meta_item_fini (item);
@@ -196,8 +196,8 @@ static int meta_add(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 t
 	item->subtype = subtype;
 	item->space = space;
 	free (item->str);
-	item->str = strdup (str);
-	if (!item->str) {
+	item->str = str ? strdup (str) : NULL;
+	if (str && !item->str) {
 		free (item);
 		return false;
 	}
@@ -358,12 +358,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 		case '*':
 		default:
 			switch (d->type) {
-			case 'a': //var and arg comments
-			case 'v':
-			case 'e':
-				//XXX I think they do not belong to here
-				break;
-			case 'C':
+			case R_META_TYPE_COMMENT:
 				{
 				const char *type = r_meta_type_to_string (d->type);
 				char *s = sdb_encode ((const ut8*)pstr, -1);
@@ -392,7 +387,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 				free (s);
 				}
 				break;
-			case 's': /* string */
+			case R_META_TYPE_STRING:
 				if (rad) {
 					char cmd[] = "Cs#";
 					switch (d->subtype) {
@@ -423,8 +418,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 					}
 				}
 				break;
-			case 'h': /* hidden */
-			case 'd': /* data */
+			case R_META_TYPE_HIDE:
+			case R_META_TYPE_DATA:
 				if (rad) {
 					a->cb_printf ("%s %"PFMT64u" @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
@@ -440,8 +435,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 					}
 				}
 				break;
-			case 'm': /* magic */
-			case 'f': /* formatted */
+			case R_META_TYPE_MAGIC:
+			case R_META_TYPE_FORMAT:
 				if (rad) {
 					a->cb_printf ("%s %"PFMT64u" %s @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
@@ -456,7 +451,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 					}
 				}
 				break;
-			case 't': /* vartype */
+			case R_META_TYPE_VARTYPE:
 				if (rad) {
 					a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
 						r_meta_type_to_string (d->type), pstr, start);
@@ -464,7 +459,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int ra
 					a->cb_printf ("0x%08"PFMT64x" %s\n", start, pstr);
 				}
 				break;
-			case 'H':
+			case R_META_TYPE_HIGHLIGHT:
 				{
 					ut8 r = 0, g = 0, b = 0, A = 0;
 					const char *esc = strchr (d->str, '\x1b');

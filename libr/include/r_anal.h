@@ -1746,7 +1746,6 @@ R_API int r_meta_list_at(RAnal *m, int type, int rad, ut64 addr);
 R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr);
 R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad);
 R_API void r_meta_rebase(RAnal *anal, ut64 diff);
-R_API void r_meta_item_free(void *_item);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int rad, PJ *pj, bool show_full);
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 

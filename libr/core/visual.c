@@ -2946,7 +2946,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 					if (ami) {
 						r_core_seek_delta (core, r_meta_item_size (core->offset, amiend));
-						r_meta_item_free (ami);
 					} else {
 						int distance = numbuf_pull ();
 						if (distance > 1) {

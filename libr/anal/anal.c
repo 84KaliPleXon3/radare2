@@ -64,6 +64,8 @@ static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
 void r_anal_hint_storage_init(RAnal *a);
 void r_anal_hint_storage_fini(RAnal *a);
 
+R_IPI void r_meta_item_free(void *_item);
+
 R_API RAnal *r_anal_new(void) {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
