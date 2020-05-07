@@ -129,6 +129,19 @@ bool test_meta_set() {
 	mu_end;
 }
 
+bool test_meta_get() {
+	RAnal *anal = r_anal_new ();
+
+	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
+	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
+
+	// TODO: finish this stuff
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_meta_rebase() {
 	RAnal *anal = r_anal_new ();
 
@@ -141,6 +154,7 @@ bool test_meta_rebase() {
 
 bool all_tests() {
 	mu_run_test(test_meta_set);
+	mu_run_test(test_meta_get);
 	mu_run_test(test_meta_rebase);
 	return tests_passed != tests_run;
 }
