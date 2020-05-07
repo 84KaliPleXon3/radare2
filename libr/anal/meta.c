@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2020 - nibble, pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_core.h>
@@ -98,27 +98,37 @@ static RPVector *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, R_NULL
 	return ctx.result;
 }
 
-R_API bool r_meta_set_string(RAnal *a, RAnalMetaType type, ut64 addr, const char *s) {
+static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
+	if (to < from) {
+		return false;
+	}
 	RSpace *space = r_spaces_current (&a->meta_spaces);
-	RIntervalNode *node = find_node_at (a, type, space, addr);
+	RIntervalNode *node = find_node_at (a, type, space, from);
 	RAnalMetaItem *item = node ? node->data : R_NEW0 (RAnalMetaItem);
 	if (!item) {
 		return false;
 	}
 	item->type = type;
+	item->subtype = subtype;
 	item->space = space;
 	free (item->str);
-	item->str = s ? strdup (s) : NULL;
-	if (s && !item->str) {
+	item->str = str ? strdup (str) : NULL;
+	if (str && !item->str) {
 		if (!node) { // If we just created this
 			free (item);
 		}
 		return false;
 	}
 	if (!node) {
-		r_interval_tree_insert (&a->meta, addr, addr, item);
+		r_interval_tree_insert (&a->meta, from, to, item);
+	} else if (node->end != to) {
+		r_interval_tree_resize (&a->meta, node, from, to);
 	}
 	return true;
+}
+
+R_API bool r_meta_set_string(RAnal *a, RAnalMetaType type, ut64 addr, const char *s) {
+	return meta_set (a, type, 0, addr, addr, s);
 }
 
 R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr) {
@@ -183,28 +193,6 @@ R_IPI void r_meta_item_free(void *_item) {
 	}
 }
 
-static bool meta_add(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
-	if (to < from) {
-		return false;
-	}
-	RSpace *space = r_spaces_current (&a->meta_spaces);
-	RAnalMetaItem *item = R_NEW0 (RAnalMetaItem);
-	if (!item) {
-		return false;
-	}
-	item->type = type;
-	item->subtype = subtype;
-	item->space = space;
-	free (item->str);
-	item->str = str ? strdup (str) : NULL;
-	if (str && !item->str) {
-		free (item);
-		return false;
-	}
-	r_interval_tree_insert (&a->meta, from, to, item);
-	return true;
-}
-
 R_API bool r_meta_add(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
 	return r_meta_add_with_subtype (a, type, 0, addr, size, str);
 }
@@ -215,7 +203,7 @@ R_API bool r_meta_add_with_subtype(RAnal *a, RAnalMetaType type, int subtype, ut
 	if (end < addr) {
 		end = UT64_MAX;
 	}
-	return meta_add (a, type, subtype, addr, end, str);
+	return meta_set (a, type, subtype, addr, end, str);
 }
 
 // TODO should be named get imho
@@ -262,27 +250,30 @@ R_API const char *r_meta_type_to_string(int type) {
 
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full) {
 	r_return_if_fail (!(rad == 'j' && !pj)); // rad == 'j' => pj != NULL
-	char *pstr, *str, *base64_str;
+	char *pstr, *base64_str;
 	RCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
 	if (r_spaces_current (&a->meta_spaces) &&
 	    r_spaces_current (&a->meta_spaces) != d->space) {
 		return;
 	}
-	if (d->type == 's') {
-		if (d->subtype == R_STRING_ENC_UTF8) {
-			str = r_str_escape_utf8 (d->str, false, esc_bslash);
-		} else {
-			if (!d->subtype) {  /* temporary legacy workaround */
-				esc_bslash = false;
+	char *str = NULL;
+	if (d->str) {
+		if (d->type == R_META_TYPE_STRING) {
+			if (d->subtype == R_STRING_ENC_UTF8) {
+				str = r_str_escape_utf8 (d->str, false, esc_bslash);
+			} else {
+				if (!d->subtype) {  /* temporary legacy workaround */
+					esc_bslash = false;
+				}
+				str = r_str_escape_latin1 (d->str, false, esc_bslash, false);
 			}
-			str = r_str_escape_latin1 (d->str, false, esc_bslash, false);
+		} else {
+			str = r_str_escape (d->str);
 		}
-	} else {
-		str = r_str_escape (d->str);
 	}
-	if (str || d->type == 'd') {
-		if (d->type=='s' && !*str) {
+	if (str || d->type == R_META_TYPE_DATA) {
+		if (d->type == R_META_TYPE_STRING && !*str) {
 			free (str);
 			return;
 		}
