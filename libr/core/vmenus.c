@@ -899,11 +899,11 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	list->free = free;
 	r_flag_foreach (core->flags, hudstuff_append, list);
 	// TODO: test this code
-	RBIter it;
+	RIntervalTreeIter it;
 	RAnalMetaItem *mi;
 	r_interval_tree_foreach (&core->anal->meta, it, mi) {
 		if (mi->type == R_META_TYPE_COMMENT) {
-			char *s = r_str_newf ("0x%"PFMT64x" %s", r_rbtree_iter_get (&it, RIntervalNode, node)->start, mi->str);
+			char *s = r_str_newf ("0x%"PFMT64x" %s", r_interval_tree_iter_get (&it)->start, mi->str);
 			if (s) {
 				r_list_push (list, s);
 			}
@@ -2162,7 +2162,7 @@ R_API int r_core_visual_comments (RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
-		RBIter it;
+		RIntervalTreeIter it;
 		RAnalMetaItem *item;
 		i = 0;
 		r_interval_tree_foreach (&core->anal->meta, it, item) {
@@ -2170,7 +2170,7 @@ R_API int r_core_visual_comments (RCore *core) {
 				continue;
 			}
 			str = item->str;
-			addr = r_rbtree_iter_get (&it, RIntervalNode, node)->start;
+			addr = r_interval_tree_iter_get (&it)->start;
 			if (option==i) {
 				from = addr;
 				size = 1; // XXX: remove this thing size for comments is useless d->size;

@@ -3868,14 +3868,14 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		break;
 	case 'C': {
 		char *glob = filter ? r_str_trim_dup (filter): NULL;
-		RBIter it;
+		RIntervalTreeIter it;
 		RAnalMetaItem *meta;
 		r_interval_tree_foreach (&core->anal->meta, it, meta) {
 			if (meta->type != R_META_TYPE_COMMENT) {
 				continue;
 			}
 			if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
-				r_core_seek (core, r_rbtree_iter_get (&it, RIntervalNode, node)->start, true);
+				r_core_seek (core, r_interval_tree_iter_get (&it)->start, true);
 				r_core_cmd0 (core, cmd);
 			}
 		}
@@ -6076,14 +6076,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_comment_command) {
 	}
 	ut64 off = core->offset;
 	RCmdStatus res = R_CMD_STATUS_OK;
-	RBIter it;
+	RIntervalTreeIter it;
 	RAnalMetaItem *meta;
 	r_interval_tree_foreach (&core->anal->meta, it, meta) {
 		if (meta->type != R_META_TYPE_COMMENT) {
 			continue;
 		}
 		if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
-			r_core_seek (core, r_rbtree_iter_get (&it, RIntervalNode, node)->start, true);
+			r_core_seek (core, r_interval_tree_iter_get (&it)->start, true);
 			RCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
 			UPDATE_CMD_STATUS_RES (res, cmd_res, err);
 		}

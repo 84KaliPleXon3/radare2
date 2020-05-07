@@ -149,11 +149,11 @@ static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut
 		if (!victims) {
 			return;
 		}
-		RBIter it;
+		RIntervalTreeIter it;
 		RAnalMetaItem *item;
 		r_interval_tree_foreach (&a->meta, it, item) {
 			if (item_matches_filter (item, type, space)) {
-				r_pvector_push (victims, r_rbtree_iter_get (&it, RIntervalNode, node));
+				r_pvector_push (victims, r_interval_tree_iter_get (&it));
 			}
 		}
 	} else {
@@ -516,10 +516,10 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr) {
 		}
 	}
 
-	RBIter it;
+	RIntervalTreeIter it;
 	RAnalMetaItem *item;
 	r_interval_tree_foreach (&a->meta, it, item) {
-		RIntervalNode *node = r_rbtree_iter_get (&it, RIntervalNode, node);
+		RIntervalNode *node = r_interval_tree_iter_get (&it);
 		if (type != R_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
@@ -551,10 +551,10 @@ R_API void r_meta_rebase(RAnal *anal, ut64 diff) {
 	}
 	RIntervalTree old = anal->meta;
 	r_interval_tree_init (&anal->meta, old.free);
-	RBIter it;
+	RIntervalTreeIter it;
 	RAnalMetaItem *item;
 	r_interval_tree_foreach (&old, it, item) {
-		RIntervalNode *node = r_rbtree_iter_get (&it, RIntervalNode, node);
+		RIntervalNode *node = r_interval_tree_iter_get (&it);
 		ut64 newstart = node->start + diff;
 		ut64 newend = node->end + diff;
 		if (newend < newstart) {
@@ -574,11 +574,11 @@ R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space) {
 
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
 	ut64 sum = 0;
-	RBIter it;
+	RIntervalTreeIter it;
 	RAnalMetaItem *item;
 	RIntervalNode *prev = NULL;
 	r_interval_tree_foreach (&a->meta, it, item) {
-		RIntervalNode *node = r_rbtree_iter_get (&it, RIntervalNode, node);
+		RIntervalNode *node = r_interval_tree_iter_get (&it);
 		if (type != R_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
@@ -591,7 +591,7 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
 
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 	int r = 0;
-	RBIter it;
+	RIntervalTreeIter it;
 	RAnalMetaItem *item;
 	r_interval_tree_foreach (&a->meta, it, item) {
 		if (item->space == space) {

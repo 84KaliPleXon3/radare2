@@ -380,7 +380,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] == '*') { // "sC*"
 			r_core_cmd0 (core, "C*~^\"CC");
 		} else if (input[1] == ' ') {
-			RBIter it;
+			RIntervalTreeIter it;
 			RAnalMetaItem *meta;
 			bool seeked = false;
 			r_interval_tree_foreach (&core->anal->meta, it, meta) {
