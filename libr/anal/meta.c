@@ -157,7 +157,7 @@ static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut
 			}
 		}
 	} else {
-		ut64 end = addr + size;
+		ut64 end = size ? addr + size - 1 : addr;
 		if (end < addr) {
 			end = UT64_MAX;
 		}
@@ -587,7 +587,7 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
 		if (type != R_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
-		ut64 start = R_MAX (prev->end, node->start);
+		ut64 start = R_MAX (prev ? prev->end : 0, node->start);
 		sum += node->end - start + 1;
 		prev = node;
 	}
