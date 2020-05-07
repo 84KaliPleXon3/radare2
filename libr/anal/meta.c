@@ -503,22 +503,20 @@ R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad) {
 	r_pvector_free (nodes);
 }
 
-
-R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
+static void print_meta_list(RAnal *a, int type, int rad, ut64 addr) {
 	PJ *pj = NULL;
 	if (rad == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return 0;
+			return;
 		}
 		pj_a (pj);
 	}
 
-	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, NULL, pj };
-
+	RAnalFunction *fcn = NULL;
 	if (addr != UT64_MAX) {
-		ui.fcn = r_anal_get_fcn_in (a, addr, 0);
-		if (!ui.fcn) {
+		fcn = r_anal_get_fcn_in (a, addr, 0);
+		if (!fcn) {
 			goto beach;
 		}
 	}
@@ -530,11 +528,10 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 		if (type != R_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
-		if (cb) {
-			// TODO
-		} else {
-			r_meta_print (a, item, node->start, r_meta_node_size (node), rad, pj, true);
+		if (fcn && !r_anal_function_contains (fcn, node->start)) {
+			continue;
 		}
+		r_meta_print (a, item, node->start, r_meta_node_size (node), rad, pj, true);
 	}
 
 beach:
@@ -543,15 +540,14 @@ beach:
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
-	return ui.count;
 }
 
-R_API int r_meta_list(RAnal *a, int type, int rad) {
-	return r_meta_list_cb (a, type, rad, NULL, NULL, UT64_MAX);
+R_API void r_meta_print_list(RAnal *a, int type, int rad) {
+	print_meta_list (a, type, rad, UT64_MAX);
 }
 
-R_API int r_meta_list_at(RAnal *a, int type, int rad, ut64 addr) {
-	return r_meta_list_cb (a, type, rad, NULL, NULL, addr);
+R_API void r_meta_print_list_at(RAnal *a, int type, int rad, ut64 addr) {
+	print_meta_list (a, type, rad, addr);
 }
 
 R_API void r_meta_rebase(RAnal *anal, ut64 diff) {

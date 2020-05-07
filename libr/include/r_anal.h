@@ -1748,12 +1748,11 @@ R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type);
 R_API void r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
-R_API int r_meta_list(RAnal *m, int type, int rad);
-R_API int r_meta_list_at(RAnal *m, int type, int rad, ut64 addr);
-R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr);
 R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad);
 R_API void r_meta_rebase(RAnal *anal, ut64 diff);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
+R_API void r_meta_print_list(RAnal *a, int type, int rad);
+R_API void r_meta_print_list_at(RAnal *a, int type, int rad, ut64 addr);
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 
 /* hints */

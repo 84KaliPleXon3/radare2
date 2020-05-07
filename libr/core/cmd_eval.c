@@ -473,19 +473,19 @@ static int cmd_eval(void *data, const char *input) {
 				r_str_argv_free (argv);
 				return false;
 			case '.':
-				r_meta_list_at (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset);
+				r_meta_print_list_at (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset);
 				r_str_argv_free (argv);
 				return false;
 			case '\0':
-				r_meta_list (core->anal, R_META_TYPE_HIGHLIGHT, 0);
+				r_meta_print_list (core->anal, R_META_TYPE_HIGHLIGHT, 0);
 				r_str_argv_free (argv);
 				return false;
 			case 'j':
-				r_meta_list (core->anal, R_META_TYPE_HIGHLIGHT, 'j');
+				r_meta_print_list (core->anal, R_META_TYPE_HIGHLIGHT, 'j');
 				r_str_argv_free (argv);
 				return false;
 			case '*':
-				r_meta_list (core->anal, R_META_TYPE_HIGHLIGHT, '*');
+				r_meta_print_list (core->anal, R_META_TYPE_HIGHLIGHT, '*');
 				r_str_argv_free (argv);
 				return false;
 			case ' ':
