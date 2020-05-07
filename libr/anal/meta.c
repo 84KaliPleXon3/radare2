@@ -227,7 +227,12 @@ R_API RPVector *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type) {
 	return collect_nodes_in (a, type, r_spaces_current (&a->meta_spaces), at);
 }
 
-R_API RPVector *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 end, RAnalMetaType type) {
+R_API RPVector *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type) {
+	r_return_val_if_fail (size, NULL);
+	ut64 end = start + size - 1;
+	if (end < start) {
+		end = UT64_MAX;
+	}
 	return collect_nodes_intersect (a, type, r_spaces_current (&a->meta_spaces), start, end);
 }
 

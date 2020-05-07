@@ -1745,7 +1745,7 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE u
 R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 at, RAnalMetaType type);
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 end, RAnalMetaType type);
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type);
 R_API void r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);

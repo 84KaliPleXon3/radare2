@@ -4275,12 +4275,12 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		piece = (S->vaddr - from) / step;
 		as->block[piece].symbols++;
 	}
-	RPVector *metas = to > from ? r_meta_get_all_intersect (core->anal, from, to - 1, R_META_TYPE_ANY) : NULL;
+	RPVector *metas = to >= from ? r_meta_get_all_intersect (core->anal, from, to - from, R_META_TYPE_ANY) : NULL;
 	if (metas) {
 		void **it;
 		r_pvector_foreach (metas, it) {
 			RIntervalNode *node = *it;
-			RAnalMetaItem *mi = *it;
+			RAnalMetaItem *mi = node->data;
 			if (node->start < from || node->end > to) {
 				continue;
 			}
@@ -4296,10 +4296,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 				break;
 			}
 		}
+		r_pvector_free (metas);
 	}
-	r_pvector_free (metas);
-	// iter all comments
-	// iter all strings
 	return as;
 }
 
