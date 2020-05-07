@@ -3687,12 +3687,12 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 //define the data at offset according to the type (byte, word...) n times
 static void define_data_ntimes (RCore *core, ut64 off, int times, int type) {
 	int i = 0;
-	r_meta_cleanup (core->anal, off, off + core->blocksize);
+	r_meta_del (core->anal, R_META_TYPE_ANY, off, core->blocksize);
 	if (times < 0) {
 		times = 1;
 	}
 	for (i = 0; i < times; i++, off += type) {
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, type, "");
+		r_meta_set (core->anal, R_META_TYPE_DATA, off, type, "");
 	}
 }
 
@@ -4079,13 +4079,13 @@ onemoretime:
 			}
 			name[4 + n] = '\0';
 			if (is_wide) {
-				r_meta_add (core->anal, R_META_TYPE_STRING,
-				  off + ntotal, (n * 2) + ntotal,
-						   (const char *)name + 4);
+				r_meta_set (core->anal, R_META_TYPE_STRING,
+							off + ntotal, (n * 2) + ntotal,
+							(const char *) name + 4);
 			} else {
-				r_meta_add (core->anal, R_META_TYPE_STRING,
-				  off + ntotal, n + ntotal,
-						   (const char *)name + 4);
+				r_meta_set (core->anal, R_META_TYPE_STRING,
+							off + ntotal, n + ntotal,
+							(const char *) name + 4);
 			}
 			r_name_filter (name, n + 10);
 			r_flag_set (core->flags, name, off + ntotal, n);
@@ -4132,11 +4132,11 @@ onemoretime:
 		//handle wide strings
 		//memcpy (name + 4, (const char *)p, n);
 		if (is_wide) {
-			r_meta_add (core->anal, R_META_TYPE_STRING, off,
-				    n * 2, (const char *)name + 4);
+			r_meta_set (core->anal, R_META_TYPE_STRING, off,
+						n * 2, (const char *) name + 4);
 		} else {
-			r_meta_add (core->anal, R_META_TYPE_STRING, off,
-				    n, (const char *)name + 4);
+			r_meta_set (core->anal, R_META_TYPE_STRING, off,
+						n, (const char *) name + 4);
 		}
 		r_name_filter (name, n + 10);
 		r_flag_set (core->flags, name, off, n);
@@ -4145,12 +4145,12 @@ onemoretime:
 		}
 		break;
 	case 'd': // TODO: check
-		r_meta_cleanup (core->anal, off, off+plen);
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, plen, "");
+		r_meta_del (core->anal, R_META_TYPE_ANY, off, plen);
+		r_meta_set (core->anal, R_META_TYPE_DATA, off, plen, "");
 		break;
 	case 'c': // TODO: check
-		r_meta_cleanup (core->anal, off, off + plen);
-		r_meta_add (core->anal, R_META_TYPE_CODE, off, plen, "");
+		r_meta_del (core->anal, R_META_TYPE_ANY, off, plen);
+		r_meta_set (core->anal, R_META_TYPE_CODE, off, plen, "");
 		break;
 	case 'u':
 		r_core_anal_undefine (core, off);

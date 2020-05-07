@@ -12,7 +12,7 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 		if (map->perm & R_PERM_X) {
 			// if theres a meta consider it data
 			ut64 size;
-			RAnalMetaItem *item = r_meta_find (core->anal, addr, R_META_TYPE_ANY, &size);
+			RAnalMetaItem *item = r_meta_get_at (core->anal, addr, R_META_TYPE_ANY, &size);
 			if (item) {
 				switch (item->type) {
 				case R_META_TYPE_DATA:

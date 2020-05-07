@@ -177,10 +177,6 @@ R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
 	del (a, type, r_spaces_current (&a->meta_spaces), addr, size);
 }
 
-R_API void r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
-	r_meta_del (a, R_META_TYPE_ANY, from, (to-from));
-}
-
 static void r_meta_item_fini(RAnalMetaItem *item) {
 	free (item->str);
 }
@@ -193,30 +189,29 @@ R_IPI void r_meta_item_free(void *_item) {
 	}
 }
 
-R_API bool r_meta_add(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
-	return r_meta_add_with_subtype (a, type, 0, addr, size, str);
+R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
+	return r_meta_set_with_subtype (a, type, 0, addr, size, str);
 }
 
-R_API bool r_meta_add_with_subtype(RAnal *a, RAnalMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {
-	r_return_val_if_fail (a && size, false);
+R_API bool r_meta_set_with_subtype(RAnal *m, RAnalMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {
+	r_return_val_if_fail (m && size, false);
 	ut64 end = addr + size - 1;
 	if (end < addr) {
 		end = UT64_MAX;
 	}
-	return meta_set (a, type, subtype, addr, end, str);
+	return meta_set (m, type, subtype, addr, end, str);
 }
 
-// TODO should be named get imho
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *size) {
-	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), at);
+R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT R_NULLABLE ut64 *size) {
+	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), addr);
 	if (node && size) {
 		*size = r_meta_item_size (node->start, node->end);
 	}
 	return node ? node->data : NULL;
 }
 
-R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 at, RAnalMetaType type) {
-	return find_node_in (a, type, r_spaces_current (&a->meta_spaces), at);
+R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 addr, RAnalMetaType type) {
+	return find_node_in (a, type, r_spaces_current (&a->meta_spaces), addr);
 }
 
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at) {
@@ -490,7 +485,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 	}
 }
 
-R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad) {
+R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad) {
 	RPVector *nodes = collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), addr);
 	if (!nodes) {
 		return;
@@ -542,11 +537,11 @@ beach:
 	}
 }
 
-R_API void r_meta_print_list(RAnal *a, int type, int rad) {
+R_API void r_meta_print_list_all(RAnal *a, int type, int rad) {
 	print_meta_list (a, type, rad, UT64_MAX);
 }
 
-R_API void r_meta_print_list_at(RAnal *a, int type, int rad, ut64 addr) {
+R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr) {
 	print_meta_list (a, type, rad, addr);
 }
 
@@ -608,9 +603,5 @@ R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz) {
 	r_return_if_fail (wordsz);
-	char val[0x10];
-	if (snprintf (val, sizeof (val), "%"PFMT64u, wordsz) < 1) {
-		return;
-	}
-	r_meta_add (a, R_META_TYPE_DATA, addr, wordsz, val);
+	r_meta_set (a, R_META_TYPE_DATA, addr, wordsz, NULL);
 }

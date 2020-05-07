@@ -3518,7 +3518,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	}
 	if (ds->asm_hint_lea) {
 		ut64 size;
-		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
+		RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
 		if (mi) {
 			int obits = ds->core->assembler->bits;
 			ds->core->assembler->bits = size * 8;
@@ -4863,7 +4863,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	RCore *core = ds->core;
 	ds_print_relocs (ds);
 	bool is_code = (!ds->hint) || (ds->hint && ds->hint->type != 'd');
-	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
+	RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
 	if (mi) {
 		is_code = mi->type != 'd';
 		mi = NULL;
@@ -6394,7 +6394,7 @@ toro:
 		}
 		ut64 meta_start = core->offset + i;
 		ut64 meta_size;
-		meta = r_meta_find (core->anal, meta_start, R_META_TYPE_ANY, &meta_size);
+		meta = r_meta_get_at (core->anal, meta_start, R_META_TYPE_ANY, &meta_size);
 		if (meta) {
 			switch (meta->type) {
 			case R_META_TYPE_DATA:

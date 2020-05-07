@@ -6,7 +6,7 @@
 bool test_meta_rebase() {
 	RAnal *anal = r_anal_new ();
 
-	r_meta_rebase (anal, 0x100);
+	r_meta_rebase (anal, -0x100);
 	mu_assert ("TODO: add some tests here", false);
 
 	r_anal_free (anal);

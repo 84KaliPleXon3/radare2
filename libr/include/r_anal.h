@@ -1717,11 +1717,13 @@ R_API void r_anal_data_free (RAnalData *d);
 #include <r_cons.h>
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
-/* hints */
-
-/*
+/* meta
+ *
  * Meta uses Condret's Klemmbaustein Priciple, i.e. intervals are defined inclusive/inclusive.
  * A meta item from 0x42 to 0x42 has a size of 1. Items with size 0 do not exist.
+ * Meta items are allowed to overlap and the internal data structure allows for multiple meta items
+ * starting at the same address.
+ * Meta items are saved in an RIntervalTree. To access the interval of an item, use the members of RIntervalNode.
  */
 
 static inline ut64 r_meta_item_size(ut64 start, ut64 end) {
@@ -1733,27 +1735,59 @@ static inline ut64 r_meta_node_size(RIntervalNode *node) {
 	return r_meta_item_size (node->start, node->end);
 }
 
-R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
-R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
-R_API bool r_meta_set_string(RAnal *m, RAnalMetaType type, ut64 addr, const char *s);
+// Set a meta item at addr with the given contents in the current space.
+// If there already exists an item with this type and space at addr (regardless of its size) it will be overwritten.
+R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str);
+
+// Same as r_meta_set() but also sets the subtype.
+R_API bool r_meta_set_with_subtype(RAnal *m, RAnalMetaType type, int subtype, ut64 addr, ut64 size, const char *str);
+
+// Delete all meta items in the current space that intersect with the given interval.
+// If size == UT64_MAX, everything in the current space will be deleted.
+R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size);
+
+// Same as r_meta_set() with a size of 1.
+R_API bool r_meta_set_string(RAnal *a, RAnalMetaType type, ut64 addr, const char *s);
+
+// Convenience function to get the str content of the item at addr with given type in the current space.
 R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr);
-R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
-R_API void r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
-R_API bool r_meta_add(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str);
-R_API bool r_meta_add_with_subtype(RAnal *m, RAnalMetaType type, int subtype, ut64 addr, ut64 size, const char *str);
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *size);
-R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 at, RAnalMetaType type);
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type);
-R_API void r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
-R_API const char *r_meta_type_to_string(int type);
-R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad);
-R_API void r_meta_rebase(RAnal *anal, ut64 diff);
-R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-R_API void r_meta_print_list(RAnal *a, int type, int rad);
-R_API void r_meta_print_list_at(RAnal *a, int type, int rad, ut64 addr);
+
+// Convenience function to add an R_META_TYPE_DATA item at the given addr in the current space.
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
+
+// Returns the item with given type that starts at addr in the current space or NULL. The size of this item  optionally returned through size.
+R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT R_NULLABLE ut64 *size);
+
+// Returns the node for one meta item with the given type that contains addr in the current space or NULL.
+// To get all the nodes, use r_meta_get_all_in().
+R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 addr, RAnalMetaType type);
+
+// Returns all nodes for items starting at the given address in the current space.
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
+
+// Returns all nodes for items with the given type containing the given address in the current space.
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);
+
+// Returns all nodes for items with the given type intersecting the given interval in the current space.
+R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type);
+
+// Delete all meta items in the given space
+R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
+
+// Returns the number of meta items in the given space
+R_API int r_meta_space_count_for(RAnal *a, const RSpace *space);
+
+// Shift all meta items by the given delta, for rebasing between different memory layouts.
+R_API void r_meta_rebase(RAnal *anal, ut64 diff);
+
+// Calculate the total size covered by meta items of the given type.
+R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
+
+R_API const char *r_meta_type_to_string(int type);
+R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
+R_API void r_meta_print_list_all(RAnal *a, int type, int rad);
+R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad);
+R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr);
 
 /* hints */
 

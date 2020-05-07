@@ -817,7 +817,7 @@ repeat:
 		case R_ANAL_OP_TYPE_LOAD:
 			if (anal->opt.loads) {
 				if (anal->iob.is_valid_offset (anal->iob.io, op.ptr, 0)) {
-					r_meta_add (anal, R_META_TYPE_DATA, op.ptr, 4, "");
+					r_meta_set (anal, R_META_TYPE_DATA, op.ptr, 4, "");
 				}
 			}
 			break;
