@@ -183,7 +183,7 @@ R_IPI void r_meta_item_free(void *_item) {
 	}
 }
 
-static int meta_add(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
+static bool meta_add(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
 	if (to < from) {
 		return false;
 	}
@@ -205,12 +205,17 @@ static int meta_add(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 t
 	return true;
 }
 
-R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
-	return meta_add (a, type, 0, from, to, str);
+R_API bool r_meta_add(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
+	return r_meta_add_with_subtype (a, type, 0, addr, size, str);
 }
 
-R_API int r_meta_add_with_subtype(RAnal *a, int type, int subtype, ut64 from, ut64 to, const char *str) {
-	return meta_add (a, type, subtype, from, to, str);
+R_API bool r_meta_add_with_subtype(RAnal *a, RAnalMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {
+	r_return_val_if_fail (a && size, false);
+	ut64 end = addr + size - 1;
+	if (end < addr) {
+		end = UT64_MAX;
+	}
+	return meta_add (a, type, subtype, addr, end, str);
 }
 
 // TODO should be named get imho
@@ -255,9 +260,8 @@ R_API const char *r_meta_type_to_string(int type) {
 	return "# unknown meta # ";
 }
 
-R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int rad, PJ *pj, bool show_full) {
+R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full) {
 	r_return_if_fail (!(rad == 'j' && !pj)); // rad == 'j' => pj != NULL
-	ut64 size = end - start;
 	char *pstr, *str, *base64_str;
 	RCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
@@ -498,7 +502,7 @@ R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad) {
 	void **it;
 	r_pvector_foreach (nodes, it) {
 		RIntervalNode *node = *it;
-		r_meta_print (a, node->data, node->start, node->end, rad, NULL, true);
+		r_meta_print (a, node->data, node->start, r_meta_node_size (node), rad, NULL, true);
 	}
 	r_pvector_free (nodes);
 }
@@ -533,7 +537,7 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 		if (cb) {
 			// TODO
 		} else {
-			r_meta_print (a, item, node->start, node->end, rad, pj, true);
+			r_meta_print (a, item, node->start, r_meta_node_size (node), rad, pj, true);
 		}
 	}
 
@@ -611,9 +615,10 @@ R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 }
 
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz) {
+	r_return_if_fail (wordsz);
 	char val[0x10];
 	if (snprintf (val, sizeof (val), "%"PFMT64u, wordsz) < 1) {
 		return;
 	}
-	r_meta_add (a, R_META_TYPE_DATA, addr, addr + wordsz, val);
+	r_meta_add (a, R_META_TYPE_DATA, addr, wordsz, val);
 }

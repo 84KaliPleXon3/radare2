@@ -3869,7 +3869,7 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 				free (str_flagname);
 				if (len > 0) {
 					r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
-							xref_to + len, (const char *)str_string);
+							len, (const char *)str_string);
 				}
 				free (str_string);
 			}
@@ -4580,7 +4580,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
 		r_flag_set (core->flags, flagname, xref_to, len);
 		r_flag_space_pop (core->flags);
-		r_meta_add (core->anal, 's', xref_to, xref_to + len, str_flagname);
+		r_meta_add (core->anal, 's', xref_to, len, str_flagname);
 		free (str_flagname);
 	}
 }

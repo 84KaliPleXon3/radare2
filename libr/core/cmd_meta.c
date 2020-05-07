@@ -533,13 +533,13 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 				if (comment) {
 					char *text = r_str_newf ("%s\n%s", comment, p);
-					r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, addr+1, text);
+					r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, 1, text);
 					free (text);
 				} else {
-					r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, addr+1, p);
+					r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
 				}
 			} else {
-				r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, addr + 1, p);
+				r_meta_add (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
 			}
 		} else {
 			eprintf ("Usage: CCa [address] [comment]\n");
@@ -604,7 +604,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
-	ut64 addr_end = 0LL, addr = core->offset;
+	ut64 addr = core->offset;
 
 	switch (input[1]) {
 	case '?':
@@ -680,14 +680,14 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			ut64 size;
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, addr + size, input[3], NULL, false);
+				r_meta_print (core->anal, mi, addr, size, input[3], NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			ut64 size;
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, addr + size, input[2], NULL, false);
+				r_meta_print (core->anal, mi, addr, size, input[2], NULL, false);
 				r_cons_newline ();
 			}
 			break;
@@ -846,7 +846,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (!n) {
 				n++;
 			}
-			addr_end = addr + n;
 			if (type == 's') {
 				switch (input[1]) {
 				case 'a':
@@ -856,13 +855,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				default:
 					subtype = R_STRING_ENC_GUESS;
 				}
-				r_meta_add_with_subtype (core->anal, type, subtype, addr, addr_end, name);
+				r_meta_add_with_subtype (core->anal, type, subtype, addr, n, name);
 			} else {
-				r_meta_add (core->anal, type, addr, addr_end, name);
+				r_meta_add (core->anal, type, addr, n, name);
 			}
 			free (t);
 			repcnt ++;
-			addr = addr_end;
+			addr += n;
 		}
 		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;

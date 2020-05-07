@@ -1717,6 +1717,13 @@ R_API void r_anal_data_free (RAnalData *d);
 #include <r_cons.h>
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
+/* hints */
+
+/*
+ * Meta uses Condret's Klemmbaustein Priciple, i.e. intervals are defined inclusive/inclusive.
+ * A meta item from 0x42 to 0x42 has a size of 1. Items with size 0 do not exist.
+ */
+
 static inline ut64 r_meta_item_size(ut64 start, ut64 end) {
 	// meta items use inclusive/inclusive intervals
 	return end - start + 1;
@@ -1732,8 +1739,8 @@ R_API bool r_meta_set_string(RAnal *m, RAnalMetaType type, ut64 addr, const char
 R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr);
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 R_API void r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
-R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str);
-R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 to, const char *str);
+R_API bool r_meta_add(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str);
+R_API bool r_meta_add_with_subtype(RAnal *m, RAnalMetaType type, int subtype, ut64 addr, ut64 size, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *size);
 R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 at, RAnalMetaType type);
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
@@ -1746,7 +1753,7 @@ R_API int r_meta_list_at(RAnal *m, int type, int rad, ut64 addr);
 R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr);
 R_API void r_meta_list_offset(RAnal *a, ut64 addr, int rad);
 R_API void r_meta_rebase(RAnal *anal, ut64 diff);
-R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 end, int rad, PJ *pj, bool show_full);
+R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 
 /* hints */
