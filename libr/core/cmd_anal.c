@@ -7270,7 +7270,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
 					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 					char *print_comment = NULL;
-					if (strchr (comment, '\n')) { // display only until the first newline
+					if (comment && strchr (comment, '\n')) { // display only until the first newline
 						print_comment = strdup (comment);
 						if (print_comment) {
 							comment = print_comment;

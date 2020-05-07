@@ -1924,7 +1924,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_anal_hint_free (hint);
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *print_comment = NULL;
-			if (strchr (comment, '\n')) { // display only until the first newline
+			if (comment && strchr (comment, '\n')) { // display only until the first newline
 				print_comment = strdup (comment);
 				if (print_comment) {
 					comment = print_comment;

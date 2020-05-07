@@ -3517,11 +3517,11 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		}
 	}
 	if (ds->asm_hint_lea) {
-		ut64 miend;
-		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, &miend);
+		ut64 size;
+		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
 		if (mi) {
 			int obits = ds->core->assembler->bits;
-			ds->core->assembler->bits = r_meta_item_size (ds->at, miend) * 8;
+			ds->core->assembler->bits = size * 8;
 			getPtr (ds, ds->at, pos);
 			ds->core->assembler->bits = obits;
 			gotShortcut = true;
@@ -6393,10 +6393,9 @@ toro:
 			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
 		ut64 meta_start = core->offset + i;
-		ut64 meta_end;
-		meta = r_meta_find (core->anal, meta_start, R_META_TYPE_ANY, &meta_end);
+		ut64 meta_size;
+		meta = r_meta_find (core->anal, meta_start, R_META_TYPE_ANY, &meta_size);
 		if (meta) {
-			ut64 meta_size = r_meta_item_size (meta_start, meta_end);
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
 				//r_cons_printf (".data: %s\n", meta->str);

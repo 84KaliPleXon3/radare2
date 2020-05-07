@@ -11,10 +11,9 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 		// TODO: honor section perms too?
 		if (map->perm & R_PERM_X) {
 			// if theres a meta consider it data
-			ut64 end;
-			RAnalMetaItem *item = r_meta_find (core->anal, addr, R_META_TYPE_ANY, &end);
+			ut64 size;
+			RAnalMetaItem *item = r_meta_find (core->anal, addr, R_META_TYPE_ANY, &size);
 			if (item) {
-				ut64 size = r_meta_item_size (addr, end);
 				switch (item->type) {
 				case R_META_TYPE_DATA:
 					ci->type = "data";

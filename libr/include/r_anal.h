@@ -1734,7 +1734,7 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 R_API void r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 to, const char *str);
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *end);
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, R_OUT R_NULLABLE ut64 *size);
 R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 at, RAnalMetaType type);
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);

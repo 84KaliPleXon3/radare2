@@ -677,23 +677,23 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		break;
 	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
-			ut64 end;
-			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
+			ut64 size;
+			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, end, input[3], NULL, false);
+				r_meta_print (core->anal, mi, addr, addr + size, input[3], NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
-			ut64 end;
-			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
+			ut64 size;
+			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, end, input[2], NULL, false);
+				r_meta_print (core->anal, mi, addr, addr + size, input[2], NULL, false);
 				r_cons_newline ();
 			}
 			break;
 		}
-		ut64 end;
-		RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &end);
+		ut64 size;
+		RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, &size);
 		if (type == 's') {
 			char *esc_str;
 			bool esc_bslash = core->print->esc_bslash;
@@ -713,11 +713,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_cons_println ("<oom>");
 			}
 		} else if (type == 'd') {
-			r_cons_printf ("%"PFMT64u"\n", r_meta_item_size (addr, end));
+			r_cons_printf ("%"PFMT64u"\n", size);
 		} else {
 			r_cons_println (mi->str);
 		}
-		free (mi->str);
 		break;
 	case ' ': // "Cf", "Cd", ...
 	case '\0':
