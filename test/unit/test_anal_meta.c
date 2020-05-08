@@ -382,6 +382,71 @@ bool test_meta_get_all_intersect() {
 	mu_end;
 }
 
+bool test_meta_del() {
+	RAnal *anal = r_anal_new ();
+
+	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
+	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
+
+	r_meta_del (anal, R_META_TYPE_COMMENT, 0x100, 1);
+	RAnalMetaItem *item = r_meta_get_at (anal, 0x100, R_META_TYPE_COMMENT, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_DATA, NULL);
+	mu_assert_notnull (item, "item not deleted");
+	item = r_meta_get_at (anal, 0x200, R_META_TYPE_STRING, NULL);
+	mu_assert_notnull (item, "item not deleted");
+
+	// reset
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
+
+	r_meta_del (anal, R_META_TYPE_COMMENT, 0x0, 0x500);
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_COMMENT, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_DATA, NULL);
+	mu_assert_notnull (item, "item not deleted");
+	item = r_meta_get_at (anal, 0x200, R_META_TYPE_STRING, NULL);
+	mu_assert_notnull (item, "item not deleted");
+
+	// reset
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
+
+	r_meta_del (anal, R_META_TYPE_COMMENT, 0, UT64_MAX);
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_COMMENT, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_DATA, NULL);
+	mu_assert_notnull (item, "item not deleted");
+	item = r_meta_get_at (anal, 0x200, R_META_TYPE_STRING, NULL);
+	mu_assert_notnull (item, "item not deleted");
+
+	// reset
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
+
+	r_meta_del (anal, R_META_TYPE_ANY, 0, 0x500);
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_COMMENT, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_DATA, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x200, R_META_TYPE_STRING, NULL);
+	mu_assert_null (item, "item deleted");
+
+	// reset
+	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
+	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
+
+	r_meta_del (anal, R_META_TYPE_ANY, 0, UT64_MAX);
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_COMMENT, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_DATA, NULL);
+	mu_assert_null (item, "item deleted");
+	item = r_meta_get_at (anal, 0x200, R_META_TYPE_STRING, NULL);
+	mu_assert_null (item, "item deleted");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_meta_rebase() {
 	RAnal *anal = r_anal_new ();
 
@@ -506,6 +571,28 @@ bool test_meta_spaces() {
 	mu_assert_ptreq (((RIntervalNode *)r_pvector_at (nodes, 0))->data, reaper_item, "all masked");
 	r_pvector_free (nodes);
 
+	// delete
+	r_meta_del (anal, R_META_TYPE_ANY, 0, 0x500);
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_ANY, NULL);
+	mu_assert_null (item, "reaper deleted");
+	count = 0;
+	r_interval_tree_foreach (&anal->meta, it, item) {
+		count++;
+	}
+	mu_assert_eq (count, 3, "masked untouched");
+
+	// reset
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "reaper");
+
+	r_meta_del (anal, R_META_TYPE_ANY, 0, UT64_MAX);
+	item = r_meta_get_at (anal, 0x100, R_META_TYPE_ANY, NULL);
+	mu_assert_null (item, "reaper deleted");
+	count = 0;
+	r_interval_tree_foreach (&anal->meta, it, item) {
+		count++;
+	}
+	mu_assert_eq (count, 3, "masked untouched");
+
 	r_anal_free (anal);
 	mu_end;
 }
@@ -517,6 +604,7 @@ bool all_tests() {
 	mu_run_test(test_meta_get_all_at);
 	mu_run_test(test_meta_get_all_in);
 	mu_run_test(test_meta_get_all_intersect);
+	mu_run_test(test_meta_del);
 	mu_run_test(test_meta_rebase);
 	mu_run_test(test_meta_spaces);
 	return tests_passed != tests_run;
