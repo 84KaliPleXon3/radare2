@@ -2175,11 +2175,10 @@ R_API int r_core_visual_comments (RCore *core) {
 				from = addr;
 				size = 1; // XXX: remove this thing size for comments is useless d->size;
 				free (p);
-				p = str;
+				p = strdup (str);
 				r_cons_printf ("  >  %s\n", str);
 			} else {
 				r_cons_printf ("     %s\n", str);
-				free (str);
 			}
 			i ++;
 		}
