@@ -898,7 +898,6 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	}
 	list->free = free;
 	r_flag_foreach (core->flags, hudstuff_append, list);
-	// TODO: test this code
 	RIntervalTreeIter it;
 	RAnalMetaItem *mi;
 	r_interval_tree_foreach (&core->anal->meta, it, mi) {
