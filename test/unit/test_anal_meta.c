@@ -290,12 +290,6 @@ bool test_meta_get_all_in() {
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
 	r_pvector_free (items);
 
-	items = r_meta_get_all_in (anal, 0x103, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_len (items), 1, "all count");
-	item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
-	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
-
 	items = r_meta_get_all_in (anal, 0xff, R_META_TYPE_ANY);
 	mu_assert_eq (r_pvector_len (items), 0, "all count");
 	r_pvector_free (items);

@@ -177,18 +177,6 @@ R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
 	del (a, type, r_spaces_current (&a->meta_spaces), addr, size);
 }
 
-static void r_meta_item_fini(RAnalMetaItem *item) {
-	free (item->str);
-}
-
-R_IPI void r_meta_item_free(void *_item) {
-	if (_item) {
-		RAnalMetaItem *item = _item;
-		r_meta_item_fini (item);
-		free (item);
-	}
-}
-
 R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
 	return r_meta_set_with_subtype (a, type, 0, addr, size, str);
 }
