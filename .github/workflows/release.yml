@@ -205,7 +205,7 @@ jobs:
       TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
       R2PIPE_TESTS: 'r2pipe-go r2pipe-js r2pipe-py'
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: radare2-src
         path: ./
@@ -254,11 +254,11 @@ jobs:
     steps:
     - name: Install tools
       run: apt-get update && apt-get install --yes gcc pkg-config
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: radare2-${{ matrix.name }}-deb
         path: ./
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: radare2-dev-${{ matrix.name }}-deb
         path: ./
@@ -279,7 +279,7 @@ jobs:
     steps:
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: radare2.pkg
         path: ./
@@ -306,7 +306,7 @@ jobs:
       shell: pwsh
       run: echo "##[set-output name=branch;]$( python sys\\version.py )"
       id: extract_version
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: radare2_installer-clang_cl-${{ steps.extract_version.outputs.branch }}
         path: ./
@@ -347,7 +347,7 @@ jobs:
           release_name: Release ${{ steps.extract_version.outputs.branch }}
           draft: true
           prerelease: false
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
     - name: Display structure of downloaded files
       run: ls -R
     - name: Upload radare2 src tarball
